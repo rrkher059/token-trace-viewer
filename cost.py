@@ -4,11 +4,11 @@ import sys
 
 from parser import parse_log
 
-# Source: https://www.anthropic.com/news/claude-opus-5, checked 2026-07-29
-# Dollars per 1,000,000 tokens. No sourced price for claude-sonnet-4-6 yet,
-# so those steps stay "n/a".
+# Source: https://www.anthropic.com/news/claude-opus-5, checked 2026-07-28
+# Dollars per 1,000,000 tokens.
 PRICES = {
     "claude-opus-5-0": {"input": 5.0, "output": 25.0},
+    "claude-sonnet-4-6": {"input": 3.0, "output": 15.0},
 }
 
 
