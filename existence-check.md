@@ -6,7 +6,7 @@
 
 | Tool | Y/N | Proof URL | Note |
 |---|---|---|---|
-| LangSmith | YES | docs.smith.langchain.com/observability/how_to_guides/dashboards | Custom dashboard: group by Run Name + metric Cost (Sum) + ranked bar/table = per-sub-agent cost ranking. Native attribute, no custom tags. Top-20 cap. Cross-trace time-series only — no per-run breakdown. Cloud US. |
+| LangSmith | YES | https://docs.smith.langchain.com/observability/how_to_guides/dashboards | Custom dashboard: group by Run Name + metric Cost (Sum) + ranked bar/table = per-sub-agent cost ranking. Native attribute, no custom tags. Top-20 cap. Cross-trace time-series only — no per-run breakdown. Cloud US. |
 | Helicone | NO (tags-only) | https://docs.helicone.ai/features/hql#in-the-dashboard | HQL = arbitrary SQL over request_response_rmt. Group-by examples are request_model. Sub-agent only via custom properties you attach + your own query. No shipped view. Cost stored ×1e9. |
 | Langfuse | YES | https://langfuse.com/docs/metrics/features/custom-dashboards | Widgets: data source = observations, dimension = name, metric = cost, bar chart → per-step cost ranking. Same shape as LangSmith. Dashboard-level, not per-run. |
 | Phoenix / Arize | NO | https://arize.com/docs/phoenix/tracing/how-to-tracing/cost-tracking | Shows cost per trace, per span, per session, per experiment, per project. No grouping by span name, no ranking. "Most expensive models" still marked coming-soon. |

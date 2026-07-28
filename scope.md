@@ -39,12 +39,10 @@ Two gaps:
 | 3 | https://github.com/langchain-ai/langgraph/issues/7417 | Sub-agents silently re-run, 2-3x wasted cost |
 | 4 | https://github.com/crewAIInc/crewAI/issues/1915 | wants per-agent tokens, not crew totals |
 
-Found 4.
-
-Found 5. Reddit was unsearchable (blocked to tooling); these came from GitHub issues on LangGraph and crewAI.
+Found 4. Reddit was unsearchable (blocked to tooling); these came from GitHub issues on LangGraph and crewAI.
 
 ---
 
 *Handle:* `rrkher059`
-*Repo:* https://github.com/rrkher059-cloud/token-trace-viewer
+*Repo:* https://github.com/rrkher059/token-trace-viewer
 *Written:* 2026-07-27
