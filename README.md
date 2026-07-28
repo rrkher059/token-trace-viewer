@@ -20,6 +20,8 @@ cd token-trace-viewer
 python3 ttv.py sample.jsonl
 ```
 
+On Windows, use `py ttv.py sample.jsonl` instead of `python3`.
+
 The tool reads OpenInference spans as JSONL, one span per line, so it works
 against anything that exports that format — Phoenix, Langfuse, or plain
 OpenTelemetry instrumented with OpenInference semantic conventions. Only the
