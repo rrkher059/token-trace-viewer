@@ -30,7 +30,7 @@ Two gaps:
 1. **Nothing explains a single run.** Every tool is a time-series dashboard. To learn why *this* run cost $4.20 you read the trace tree by eye.
 2. **Nothing detects repeated context.** No tool flags identical context resent across steps.
 
-## First ten users
+## First users
 
 | # | URL | What they said |
 |---|-----|----------------|
@@ -40,6 +40,8 @@ Two gaps:
 | 4 | https://github.com/crewAIInc/crewAI/issues/1915 | wants per-agent tokens, not crew totals |
 
 Found 4.
+
+Found 5. Reddit was unsearchable (blocked to tooling); these came from GitHub issues on LangGraph and crewAI.
 
 ---
 
