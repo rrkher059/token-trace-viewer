@@ -38,6 +38,10 @@ def render(steps):
             label = f"{step} (x{count})" if count > 1 else step
             rows.append((f"    {label}", inp, out))
 
+    grand_in = sum(inp for inp, _out in agent_totals.values())
+    grand_out = sum(out for _inp, out in agent_totals.values())
+    rows.append(("TOTAL", grand_in, grand_out))
+
     label_width = max((len(label) for label, _in, _out in rows), default=0)
     in_width = max((len(f"{inp:,}") for _label, inp, _out in rows), default=0)
     out_width = max((len(f"{out:,}") for _label, _inp, out in rows), default=0)
