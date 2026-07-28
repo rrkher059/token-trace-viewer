@@ -1,0 +1,12 @@
+{"name": "plan_task", "attributes": {"openinference.span.kind": "LLM", "agent.name": "planner", "graph.node.name": "plan_task", "llm.model_name": "claude-opus-4-6", "llm.token_count.prompt": 1840, "llm.token_count.completion": 512}}
+{"name": "decompose_goal", "attributes": {"openinference.span.kind": "LLM", "agent.name": "planner", "graph.node.name": "decompose_goal", "llm.model_name": "claude-opu
+{"name": "route_to_researcher", "span_id": "0af31c9e", "start_time": "2026-07-27T09:14:02Z"}
+{"name": "search_web", "attributes": {"openinference.span.kind": "LLM", "agent.name": "researcher", "graph.node.name": "search_web", "llm.model_name": "claude-sonnet-4-6", "llm.token_count.prompt": 4200, "llm.token_count.completion": 310}}
+{"name": "read_results", "attributes": {"openinference.span.kind": "LLM", "agent.name": "researcher", "graph.node.name": "read_results", "llm.model_name": "claude-sonnet-4-6", "llm.token_count.prompt": 11750, "llm.token_count.completion": 842}}
+{"name": "fetch_page", "attributes": {"openinference.span.kind": "TOOL", "agent.name": "researcher", "graph.node.name": "fetch_page", "tool.name": "http_get", "tool.description": "GET the "canonical" url"}}
+
+{"name": "summarize_findings", "attributes": {"openinference.span.kind": "LLM", "agent.name": "researcher", "graph.node.name": "summarize_findings", "llm.model_name": "claude-sonnet-4-6", "llm.token_count.prompt": 18430, "llm.token_count.completion": 1276}}
+{"name": "draft_section", "attributes": {"openinference.span.kind": "LLM", "agent.name": "writer", "graph.node.name": "draft_section", "llm.model_name": "claude-sonnet-4-6", "llm.token_count.prompt": 9120, "llm.token_count.completion": 2340}}
+{"name": "revise_draft", "attributes": {"openinference.span.kind": "LLM", "agent.name": "writer", "graph.node.name": "revise_draft", "llm.model_name": "claude-sonnet-4-6", "llm.token_count.prompt": 12680, "llm.token_count.completion": 1905}}
+{"name": "verify_output", "attributes": {"openinference.span.kind": "LLM", "agent.name": "planner", "graph.node.name": "verify_output", "llm.model_name": "claude-opus-4-6", "llm.token_count.prompt": 15240, "llm.token_count.completion": 430}}
+{"name": "emit_answer", "attributes": {"openinference.span.kind": "LLM", "agent.name": "writer", "graph.node.name": "emit_answer", "llm.model_name": "claude-sonnet-4-6", "llm.token_count.pro
