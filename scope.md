@@ -39,8 +39,6 @@ Two gaps:
 | 3 | https://github.com/langchain-ai/langgraph/issues/7417 | Sub-agents silently re-run, 2-3x wasted cost |
 | 4 | https://github.com/crewAIInc/crewAI/issues/1915 | wants per-agent tokens, not crew totals |
 
-Found 4. Reddit was unsearchable (blocked to tooling); these came from GitHub issues on LangGraph and crewAI.
-
 ---
 
 *Handle:* `rrkher059`
