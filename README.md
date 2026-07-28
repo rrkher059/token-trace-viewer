@@ -60,5 +60,3 @@ See [not-in-v0.1.md](not-in-v0.1.md) for what's planned but not shipped.
 ## Contact
 
 Open a GitHub issue, or email <rrkher059@gmail.com>.
-
-I'd rather hear that it broke on your log than not hear at all.
