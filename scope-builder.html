@@ -1,0 +1,210 @@
+<div id="app"></div>
+<style>
+  #app{font-family:ui-sans-serif,-apple-system,"Segoe UI",sans-serif;max-width:860px;margin:0 auto;color:#1c1917}
+  h1{font-size:19px;margin:0 0 2px;letter-spacing:-.01em}
+  h2{font-size:12px;margin:22px 0 8px;letter-spacing:.06em;text-transform:uppercase;color:#78716c}
+  .sub{font-size:12px;color:#78716c;line-height:1.5}
+  .clockbar{display:flex;align-items:center;gap:14px;margin:14px 0 0;padding:10px 12px;border:1px solid #e7e5e4;border-radius:8px;background:#fafaf9}
+  .clock{font-size:21px;font-variant-numeric:tabular-nums;font-weight:600;letter-spacing:-.02em}
+  .clock.warn{color:#b45309}.clock.over{color:#b91c1c}
+  .lbl{font-size:10.5px;color:#a8a29e;text-transform:uppercase;letter-spacing:.05em}
+  .push{margin-left:auto;display:flex;gap:6px}
+  button{font:inherit;font-size:12px;padding:6px 11px;border:1px solid #d6d3d1;background:#fff;border-radius:6px;cursor:pointer;color:#1c1917}
+  button:hover{background:#f5f5f4}
+  button.solid{background:#1c1917;color:#fff;border-color:#1c1917}
+  button.solid:hover{background:#44403c}
+  button.sm{padding:4px 8px;font-size:11px}
+  input,textarea{width:100%;box-sizing:border-box;font:inherit;font-size:12.5px;padding:6px 8px;border:1px solid #e7e5e4;border-radius:6px;background:#fff;color:#1c1917}
+  input:focus,textarea:focus{outline:none;border-color:#a8a29e}
+  textarea{resize:vertical;line-height:1.5}
+  .two{display:flex;gap:8px}
+  .two>div{flex:1}
+  .q{font-size:11px;color:#78716c;margin:0 0 3px}
+  .hint{font-size:11px;color:#a8a29e;margin:4px 0 0;line-height:1.45}
+  .qbox{border:1px solid #e7e5e4;border-radius:8px;padding:4px 0;margin-bottom:14px}
+  .qrow{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #f5f5f4}
+  .qrow:last-child{border-bottom:0}
+  .qtxt{flex:1;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;color:#44403c;overflow-x:auto;white-space:nowrap}
+  .qrow.used .qtxt{color:#a8a29e;text-decoration:line-through}
+  a.go{font-size:11px;color:#1c1917;text-decoration:none;border:1px solid #d6d3d1;border-radius:5px;padding:4px 8px;flex:none}
+  a.go:hover{background:#f5f5f4}
+  .urow{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+  .unum{width:20px;flex:none;font-size:11px;color:#a8a29e;font-variant-numeric:tabular-nums}
+  .urow input.u{flex:2}
+  .urow input.w{flex:1}
+  .urow input.bad{border-color:#fca5a5;background:#fef2f2}
+  .cnt{font-size:12px;color:#78716c;margin:8px 0 0}
+  .cnt b{color:#1c1917}
+  .test{font-size:12px;color:#57534e;background:#fafaf9;border-left:2px solid #d6d3d1;padding:8px 12px;margin-bottom:12px;line-height:1.6}
+  .out{margin-top:20px;display:none}
+  .out.show{display:block}
+  .out textarea{min-height:300px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
+  .foot{font-size:11px;color:#a8a29e;margin-top:14px;line-height:1.5}
+</style>
+<script>
+(function(){
+const Q=[
+ ["site:reddit.com/r/LangChain agent token cost","https://www.google.com/search?q="],
+ ["site:reddit.com/r/LLMDevs why is my agent so expensive","https://www.google.com/search?q="],
+ ["site:reddit.com/r/LangChain token usage per node","https://www.google.com/search?q="],
+ ["site:reddit.com/r/LLMDevs where are my tokens going","https://www.google.com/search?q="],
+ ["site:reddit.com/r/AI_Agents agent cost too high","https://www.google.com/search?q="],
+ ["repo:langchain-ai/langgraph token cost is:issue","https://github.com/search?type=issues&q="],
+ ["repo:crewAIInc/crewAI token usage is:issue","https://github.com/search?type=issues&q="]
+];
+const NOT=[
+ "No live dashboard. No server, no web UI, no hosted anything. One command, text output.",
+ "No trends over time. It explains a single run, not many runs across days. That is what LangSmith and Langfuse already do.",
+ "No optimization suggestions. It shows a context block was resent nine times. It does not tell you how to fix it.",
+ "No instrumentation. It does not wrap your LLM calls or collect traces. You bring a log; it reads it.",
+ "Prices for one provider only, hardcoded in v0.1.",
+ "OpenInference spans only. No framework-specific log formats."
+];
+const app=document.getElementById('app');
+const C={sec:75*60,run:false};
+
+app.innerHTML=`
+<h1>scope.md builder</h1>
+<div class="sub">Block ends 9:15. Sections 1–2 are drafted. The table is the work.</div>
+
+<div class="clockbar">
+  <div><div class="lbl">Block remaining</div><div class="clock" id="big">75:00</div></div>
+  <div><div class="lbl">Users found</div><div class="clock" id="cn">0</div></div>
+  <div class="push"><button class="solid" id="go">Start</button><button id="rs">Reset</button></div>
+</div>
+
+<h2>Identity</h2>
+<div class="two">
+  <div><div class="q">Handle — two words, not about this project. Check github.com/&lt;name&gt; is a 404.</div><input id="h" placeholder="e.g. amberkiln"></div>
+  <div><div class="q">Repo URL</div><input id="r" placeholder="https://github.com/…"></div>
+</div>
+
+<h2>What it does</h2>
+<textarea id="does" rows="8"></textarea>
+
+<h2>What it does NOT do</h2>
+<div class="q">One per line. Four minimum. This is what stops you adding features on Friday.</div>
+<textarea id="not" rows="8"></textarea>
+
+<h2>Hunt — click to run, click the row to cross it off</h2>
+<div class="qbox" id="qb">${Q.map((q,i)=>`<div class="qrow" data-i="${i}"><span class="qtxt">${q[0]}</span><a class="go" target="_blank" rel="noopener" href="${q[1]}${encodeURIComponent(q[0])}">Run ↗</a></div>`).join('')}</div>
+
+<div class="test"><b>Keep it only if</b> a real person complained about not knowing where their tokens went.<br>
+Skip: billing setup questions, blog posts, tutorials, anyone advertising their own tool.<br>
+A comment counts as a person — click its timestamp to get the comment's own URL.<br>
+<b>The real test:</b> would you actually send this person your tool on Saturday? If not, they don't belong on the list.</div>
+
+<h2>The list</h2>
+<div id="rows"></div>
+<button class="sm" id="add">+ Add row</button>
+<div class="cnt" id="cnt2"></div>
+
+<div style="margin-top:22px">
+  <button class="solid" id="gen">Generate scope.md</button>
+</div>
+
+<div class="out" id="out">
+  <div class="q">Select all, copy, save as <b>scope.md</b> in your repo.</div>
+  <textarea id="md" readonly></textarea>
+</div>
+<div class="foot">Nothing is saved when this closes — generate and copy before you shut it.</div>`;
+
+document.getElementById('does').value=
+`Reads the OpenInference spans from ONE agent run and tells you where the tokens went.
+
+1. Per-sub-agent totals — input and output tokens grouped by agent.name, and within each agent, by step.
+2. Cost ranking — every step in the run, sorted by dollar cost, highest first.
+3. Repeated-context detection — flags context blocks sent more than once across steps, with repeat count and cost.
+
+Command-line tool. Point it at a log file, get a table.`;
+document.getElementById('not').value=NOT.join('\n');
+
+const rowsEl=document.getElementById('rows');
+function addRow(){
+  const n=rowsEl.children.length+1;
+  const d=document.createElement('div');
+  d.className='urow';
+  d.innerHTML=`<span class="unum">${n}</span><input class="u" placeholder="https://…"><input class="w" placeholder="five words on what they said">`;
+  rowsEl.appendChild(d);
+  d.querySelector('.u').addEventListener('input',count);
+}
+for(let i=0;i<10;i++)addRow();
+
+function count(){
+  let n=0;
+  rowsEl.querySelectorAll('.u').forEach(i=>{
+    const v=i.value.trim();
+    const ok=/^https?:\/\/\S+$/.test(v);
+    i.classList.toggle('bad',v!==''&&!ok);
+    if(ok)n++;
+  });
+  document.getElementById('cn').textContent=n;
+  const c2=document.getElementById('cnt2');
+  c2.innerHTML=n===0?'':`<b>${n}</b> real ${n===1?'URL':'URLs'}. ${n>=10?'Done — stop hunting.':n>=6?'Enough to be honest about. Keep going if time allows.':'Keep going.'}`;
+}
+
+const fmt=s=>{const a=Math.abs(s);return (s<0?'-':'')+Math.floor(a/60)+':'+String(a%60).padStart(2,'0');};
+setInterval(()=>{if(!C.run)return;C.sec--;
+  const b=document.getElementById('big');
+  b.textContent=fmt(C.sec);
+  b.className='clock'+(C.sec<0?' over':C.sec<900?' warn':'');},1000);
+
+app.addEventListener('click',e=>{
+  const row=e.target.closest('.qrow');
+  if(row&&e.target.tagName!=='A'){row.classList.toggle('used');return;}
+  const b=e.target.closest('button'); if(!b)return;
+  if(b.id==='go'){C.run=!C.run;b.textContent=C.run?'Pause':'Resume';return;}
+  if(b.id==='rs'){C.sec=75*60;C.run=false;document.getElementById('go').textContent='Start';
+    document.getElementById('big').textContent='75:00';document.getElementById('big').className='clock';return;}
+  if(b.id==='add'){addRow();return;}
+  if(b.id==='gen'){
+    const users=[];
+    rowsEl.querySelectorAll('.urow').forEach(r=>{
+      const u=r.querySelector('.u').value.trim(), w=r.querySelector('.w').value.trim();
+      if(/^https?:\/\/\S+$/.test(u))users.push([u,w||'—']);
+    });
+    const notList=document.getElementById('not').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    const handle=document.getElementById('h').value.trim()||'TODO';
+    const repo=document.getElementById('r').value.trim()||'TODO';
+    const tbl=users.length
+      ? '| # | URL | What they said |\n|---|-----|----------------|\n'+users.map((u,i)=>`| ${i+1} | ${u[0]} | ${u[1].replace(/\|/g,'\\|')} |`).join('\n')+`\n\nFound ${users.length}.`
+      : '_None found yet._';
+    document.getElementById('md').value=
+`# Scope — Token Trace Viewer (v0.1)
+
+## What it does
+
+${document.getElementById('does').value.trim()}
+
+## What it does NOT do
+
+${notList.map(s=>'- '+s).join('\n')}
+
+## Why this exists
+
+Checked five tools on 2026-07-27 (see \`existence-check.md\`).
+
+LangSmith and Langfuse both ship per-step cost rankings, but as dashboard widgets that aggregate across many runs over a time window. Helicone can answer the question only if you tag every call yourself and write SQL. Phoenix shows cost per span and per project, with nothing in between. OpenInference defines every field needed — \`agent.name\`, \`graph.node.name\`, \`llm.cost.total\` — but is a spec, not a product.
+
+Two gaps:
+
+1. **Nothing explains a single run.** Every tool is a time-series dashboard. To learn why *this* run cost $4.20 you read the trace tree by eye.
+2. **Nothing detects repeated context.** No tool flags identical context resent across steps.
+
+## First ten users
+
+${tbl}
+
+---
+
+*Handle:* \`${handle}\`
+*Repo:* ${repo}
+*Written:* 2026-07-27
+`;
+    document.getElementById('out').classList.add('show');
+    document.getElementById('md').scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+});
+count();
+})();
+</script>
