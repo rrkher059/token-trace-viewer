@@ -30,20 +30,26 @@ real exports from those tools have not been run through it yet.
 
 ## Sample output
 
+This is real output from an actual LangGraph run instrumented with OpenInference, not a synthetic sample.
+
 Full output includes per-agent token totals; trimmed here.
 
 ```
 == Cost ranking (cost.py) ==
- #  AGENT       STEP                     IN    OUT     COST  % OF TOTAL
- 1  planner     verify_output        15,240    430  $0.0869       18.4%
- 2  researcher  summarize_findings   18,430  1,276  $0.0744       15.8%
- 3  writer      revise_draft         12,680  1,905  $0.0666       14.1%
- 4  writer      emit_answer          16,010  1,120  $0.0648       13.8%
- 5  writer      draft_section         9,120  2,340  $0.0625       13.2%
+#  AGENT     STEP        IN  OUT  COST  % OF TOTAL
+1  research  research   300  241   n/a         n/a
+2  research  research     0    0   n/a         n/a
+3  write     write      536  179   n/a         n/a
+4  write     write        0    0   n/a         n/a
+5  review    review     473   58   n/a         n/a
+6  review    review       0    0   n/a         n/a
+7  unknown   LangGraph    0    0   n/a         n/a
+
+note: 7 step(s) have no price for their model (or no llm.model_name at all) and are shown with cost "n/a"; they are excluded from % of run total.
 
 == Repeated context (repeat.py) ==
 PREVIEW                                                       STEPS  TOKENS (EST)  WASTED (EST)
-You are an autonomous agent operating inside a multi-agent r      9           766          6128
+You are a careful research assistant. You are a careful rese      3           380           760
 
 note: token counts are estimates (len(text) // 4 of the raw string), not measured against a real tokenizer.
 ```

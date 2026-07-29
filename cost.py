@@ -24,8 +24,14 @@ def _cost(step):
 
 
 def render(steps):
+    # Zero-token spans (e.g. a LangGraph CHAIN wrapper span around the LLM
+    # span that did the actual work) cost nothing and would just show up as
+    # an empty-looking duplicate of the real step. They stay in report.py's
+    # totals; they just don't get a ranking row here.
+    priced_steps = [s for s in steps if not s.zero_tokens]
+
     # (agent, step, input_tokens, output_tokens, cost_or_None)
-    rows = [(s.agent, s.step, s.input_tokens, s.output_tokens, _cost(s)) for s in steps]
+    rows = [(s.agent, s.step, s.input_tokens, s.output_tokens, _cost(s)) for s in priced_steps]
 
     # Priced rows first, highest cost first; unpriced ("n/a") rows sink to the
     # bottom in their original order rather than being dropped.

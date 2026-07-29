@@ -16,6 +16,7 @@ class Step:
     input_tokens: int
     output_tokens: int
     raw_line_number: int
+    zero_tokens: bool
 
 
 def _as_int(value) -> int:
@@ -27,19 +28,45 @@ def _as_int(value) -> int:
         return 0
 
 
+def _langgraph_node(attrs: dict) -> str | None:
+    """Real LangGraph traces carry no agent.name or graph.node.name attribute;
+    the node name is buried in the metadata attribute, itself a JSON string,
+    under langgraph_node. Return None if it can't be recovered."""
+    metadata = attrs.get("metadata")
+    if not isinstance(metadata, str):
+        return None
+    try:
+        parsed = json.loads(metadata)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, dict):
+        return None
+    node = parsed.get("langgraph_node")
+    return node if isinstance(node, str) else None
+
+
 def _to_step(record: dict, line_number: int) -> Step:
     """Build a Step from one decoded JSON object, filling in defaults for
     anything the exporter left out. This never raises on missing keys."""
     attrs = record.get("attributes") or {}
     if not isinstance(attrs, dict):
         attrs = {}
+    input_tokens = _as_int(attrs.get("llm.token_count.prompt"))
+    output_tokens = _as_int(attrs.get("llm.token_count.completion"))
     return Step(
-        agent=attrs.get("agent.name") or "unknown",
-        step=attrs.get("graph.node.name") or record.get("name") or "unknown",
+        agent=attrs.get("agent.name") or _langgraph_node(attrs) or "unknown",
+        # A real LangGraph node emits two spans: a CHAIN span named after the
+        # node (0 tokens) and, nested inside it, the LLM span that did the
+        # actual work. Preferring the span's own name over langgraph_node
+        # here keeps those two spans visibly distinct instead of both
+        # collapsing onto the node name and looking like a duplicated step.
+        step=(attrs.get("graph.node.name") or record.get("name")
+              or _langgraph_node(attrs) or "unknown"),
         model=attrs.get("llm.model_name"),
-        input_tokens=_as_int(attrs.get("llm.token_count.prompt")),
-        output_tokens=_as_int(attrs.get("llm.token_count.completion")),
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
         raw_line_number=line_number,
+        zero_tokens=input_tokens == 0 and output_tokens == 0,
     )
 
 
