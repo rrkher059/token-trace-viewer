@@ -9,3 +9,8 @@
   can't see.
 - Shared-prefix detection compares adjacent sorted strings, which is fast
   enough for small traces but untested on traces with hundreds of spans.
+- Negative token counts are trusted into totals without warning. A span
+  with a negative llm.token_count.prompt/completion silently pulls the
+  report and cost totals down instead of being flagged as bad data.
+- cost.py has no row cap on the ranking table. A trace with 5,000 spans
+  prints 5,000 rows instead of a top-N summary.
