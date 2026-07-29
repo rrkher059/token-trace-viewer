@@ -36,16 +36,19 @@ Full output includes per-agent token totals; trimmed here.
 
 ```
 == Cost ranking (cost.py) ==
-#  AGENT     STEP        IN  OUT  COST  % OF TOTAL
-1  research  research   300  241   n/a         n/a
-2  research  research     0    0   n/a         n/a
-3  write     write      536  179   n/a         n/a
-4  write     write        0    0   n/a         n/a
-5  review    review     473   58   n/a         n/a
-6  review    review       0    0   n/a         n/a
-7  unknown   LangGraph    0    0   n/a         n/a
+#  AGENT     STEP         IN  OUT  COST  % OF TOTAL
+1  research  ChatOpenAI  300  241   n/a         n/a
+2  write     ChatOpenAI  536  179   n/a         n/a
+3  review    ChatOpenAI  473   58   n/a         n/a
 
-note: 7 step(s) have no price for their model (or no llm.model_name at all) and are shown with cost "n/a"; they are excluded from % of run total.
+note: 3 step(s) have no price for their model (or no llm.model_name at all) and are shown with cost "n/a"; they are excluded from % of run total.
+
+container spans (0 tokens, work counted in child spans):
+AGENT     STEP       IN  OUT
+research  research    0    0
+write     write       0    0
+review    review      0    0
+unknown   LangGraph   0    0
 
 == Repeated context (repeat.py) ==
 PREVIEW                                                       STEPS  TOKENS (EST)  WASTED (EST)
