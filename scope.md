@@ -36,11 +36,14 @@ Two gaps:
 
 | # | URL | What they said |
 |---|-----|----------------|
-| 1 | https://github.com/langchain-ai/langgraph/issues/8094 | Costs tripled; spent days chasing phantom regression |
-| 2 | https://github.com/langchain-ai/langgraph/issues/7417 | Sub-agents silently re-run, 2-3x wasted cost |
+| 1 | https://github.com/langchain-ai/langgraph/issues/7562 | Manually diffed prompts across steps to find context resent unchanged, after noticing padded costs -- exactly the workflow this tool automates. |
 
-Found 2: langchain-ai/langgraph issues #7562 and crewAIInc/crewAI issue
-#1915 were dropped from this table -- both closed.
+Two issues previously listed here (#8094 "costs tripled", #7417
+"sub-agents silently re-run") turned out on closer reading to be LangGraph
+framework bugs -- `astream_events` losing metadata and a cloud run
+re-dispatching sub-agents -- not people measuring cost attribution or
+repeated context by hand. Both are removed from this table. crewAIInc/crewAI
+issue #1915 remains dropped (closed).
 
 ---
 

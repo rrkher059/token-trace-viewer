@@ -1,22 +1,82 @@
 """Print every step ranked by dollar cost, highest first."""
 
+import argparse
+import json
 import sys
+from pathlib import Path
 
 from parser import parse_log
 
-# Source: https://www.anthropic.com/news/claude-opus-5, checked 2026-07-28
-# Dollars per 1,000,000 tokens.
-PRICES = {
-    "claude-opus-5-0": {"input": 5.0, "output": 25.0},
-    # Source: https://openrouter.ai/anthropic/claude-sonnet-4.5, checked
-    # 2026-07-28. This is OpenRouter's per-token price, which bakes in their
-    # margin on top of Anthropic's list price -- not Anthropic's own rate.
-    "claude-sonnet-4.5": {"input": 3.0, "output": 15.0},
-}
+# prices.json lives at the repo root, next to this file, unless --prices
+# points somewhere else.
+DEFAULT_PRICES_PATH = Path(__file__).resolve().parent / "prices.json"
+
+
+def load_prices(path=None):
+    """Load the rate card from a JSON file: a list of entries, each with
+    model, input_per_1m, output_per_1m, source, and date_checked.
+
+    Returns (prices, error). On any problem -- the file is missing, isn't
+    valid JSON, or isn't shaped like a list of priced entries -- prices is
+    an empty dict and error is a human-readable message. Every step then
+    shows cost "n/a" instead of the run crashing; a missing or broken rate
+    card is not a reason to refuse to show the rest of the report.
+
+    An entry with no source is dropped rather than trusted: the constraint
+    that every price must be traceable to where it came from held in the
+    old hardcoded PRICES table, and moving to JSON doesn't relax it.
+    """
+    prices_path = Path(path) if path else DEFAULT_PRICES_PATH
+
+    try:
+        raw = prices_path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return {}, f"cannot read prices file '{prices_path}': {exc.strerror}"
+
+    try:
+        entries = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        return {}, f"prices file '{prices_path}' is not valid JSON: {exc}"
+
+    if not isinstance(entries, list):
+        return {}, f"prices file '{prices_path}' must contain a JSON list of entries"
+
+    prices = {}
+    skipped = 0
+    for entry in entries:
+        if not isinstance(entry, dict):
+            skipped += 1
+            continue
+        model = entry.get("model")
+        input_price = entry.get("input_per_1m")
+        output_price = entry.get("output_per_1m")
+        source = entry.get("source")
+        valid = (
+            isinstance(model, str) and model
+            and isinstance(input_price, (int, float)) and not isinstance(input_price, bool)
+            and isinstance(output_price, (int, float)) and not isinstance(output_price, bool)
+            and isinstance(source, str) and source
+        )
+        if not valid:
+            skipped += 1
+            continue
+        prices[model] = {"input": float(input_price), "output": float(output_price)}
+
+    if not prices:
+        return {}, f"prices file '{prices_path}' has no usable priced entries"
+
+    if skipped:
+        print(
+            f"warning: {skipped} entry(ies) in '{prices_path}' were skipped "
+            f"(missing model/price/source)",
+            file=sys.stderr,
+        )
+
+    return prices, None
 
 
 def _normalize_model(model):
-    """PRICES keys are bare model names; strip a provider prefix like
+    """prices.json keys are bare model names; strip a provider prefix like
     'anthropic/' or 'openai/' before the lookup so 'anthropic/claude-sonnet-4.5'
     resolves the same as 'claude-sonnet-4.5'."""
     if not model:
@@ -24,26 +84,27 @@ def _normalize_model(model):
     return model.rsplit("/", 1)[-1]
 
 
-def _cost(step):
+def _cost(step, prices):
     """Dollar cost for one step as (cost, source), or (None, None) if we
     have neither a reported cost nor a price for its model (including steps
-    with no llm.model_name at all, e.g. some CHAIN spans).
+    with no llm.model_name at all, e.g. some CHAIN spans, or a model with
+    no entry in prices.json).
 
-    A span's own reported cost always wins over our price table -- it
+    A span's own reported cost always wins over the rate card -- it
     reflects what was actually billed, including any provider-side
-    discounting our static PRICES can't know about."""
+    discounting a static price list can't know about."""
     if step.reported_cost is not None:
         return step.reported_cost, "reported"
     if not step.model:
         return None, None
-    price = PRICES.get(_normalize_model(step.model))
+    price = prices.get(_normalize_model(step.model))
     if price is None:
         return None, None
     cost = (step.input_tokens * price["input"] + step.output_tokens * price["output"]) / 1_000_000
     return cost, "computed"
 
 
-def render(steps):
+def render(steps, prices):
     # Zero-token spans (e.g. a LangGraph CHAIN wrapper span around the LLM
     # span that did the actual work) cost nothing, and ranking them by
     # dollar cost alongside real spend is meaningless. They aren't hidden
@@ -53,7 +114,7 @@ def render(steps):
     container_steps = [s for s in steps if s.zero_tokens]
 
     # (agent, step, input_tokens, output_tokens, cost_or_None, source_or_None)
-    rows = [(s.agent, s.step, s.input_tokens, s.output_tokens, *_cost(s)) for s in priced_steps]
+    rows = [(s.agent, s.step, s.input_tokens, s.output_tokens, *_cost(s, prices)) for s in priced_steps]
 
     # Priced rows first, highest cost first; unpriced ("n/a") rows sink to the
     # bottom in their original order rather than being dropped.
@@ -112,9 +173,13 @@ def render(steps):
     return "\n".join(lines)
 
 
-def main(path):
+def main(path, prices_path=None):
+    prices, prices_error = load_prices(prices_path)
+    if prices_error:
+        print(f"warning: {prices_error}; showing cost as n/a for every row", file=sys.stderr)
+
     steps, skipped, unknown_agents = parse_log(path)
-    report = render(steps)
+    report = render(steps, prices)
     if report:
         print(report)
 
@@ -126,7 +191,11 @@ def main(path):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("usage: python cost.py <path-to-log.jsonl>", file=sys.stderr)
-        sys.exit(1)
-    main(sys.argv[1])
+    arg_parser = argparse.ArgumentParser(description="Rank trace steps by dollar cost.")
+    arg_parser.add_argument("path", help="path to a JSONL trace file")
+    arg_parser.add_argument(
+        "--prices", default=None,
+        help=f"path to a prices JSON file (default: {DEFAULT_PRICES_PATH.name} next to cost.py)",
+    )
+    args = arg_parser.parse_args()
+    main(args.path, args.prices)

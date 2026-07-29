@@ -18,6 +18,7 @@ class Step:
     raw_line_number: int
     zero_tokens: bool
     reported_cost: float | None
+    span_id: str | None
 
 
 def _as_int(value) -> int:
@@ -54,6 +55,25 @@ def _reported_cost(attrs: dict) -> float | None:
     completion_cost = _as_float(attrs.get("llm.cost.completion"))
     if prompt_cost is not None and completion_cost is not None:
         return prompt_cost + completion_cost
+    return None
+
+
+def extract_span_id(record: dict) -> str | None:
+    """OpenInference/OTel spans carry a span id either as a top-level
+    "span_id" key or nested under "context.span_id". Checked against real
+    traces on hand: the bundled sample.jsonl and the one real LangGraph
+    trace have neither (their exporter dropped the OTel "context" wrapper
+    entirely) -- only sample-broken.jsonl's hand-crafted edge case carries
+    a top-level span_id. Callers should fall back to line number when this
+    returns None, which is the common case today, not the exception."""
+    span_id = record.get("span_id")
+    if isinstance(span_id, str) and span_id:
+        return span_id
+    context = record.get("context")
+    if isinstance(context, dict):
+        span_id = context.get("span_id")
+        if isinstance(span_id, str) and span_id:
+            return span_id
     return None
 
 
@@ -97,6 +117,7 @@ def _to_step(record: dict, line_number: int) -> Step:
         raw_line_number=line_number,
         zero_tokens=input_tokens == 0 and output_tokens == 0,
         reported_cost=_reported_cost(attrs),
+        span_id=extract_span_id(record),
     )
 
 
@@ -190,6 +211,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     parsed_steps, bad_lines, no_agent = parse_log(sys.argv[1])
+    no_span_id = sum(1 for s in parsed_steps if s.span_id is None)
     print(f"parsed {len(parsed_steps)} steps, "
           f"skipped {bad_lines} bad lines, "
-          f"{no_agent} step(s) had no agent name")
+          f"{no_agent} step(s) had no agent name, "
+          f"{no_span_id} step(s) had no span id (using line number instead)")

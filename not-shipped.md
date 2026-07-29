@@ -1,17 +1,31 @@
-# Not in v0.1
+# Not shipped
 
-- Near-duplicate detection beyond shared-prefix matching. Exact matches and
-  long shared leading-prefix matches (e.g. a fixed system prompt followed by
-  different per-step text) are both caught today; true near-duplicates that
-  diverge earlier in the string -- paraphrases, reordered content, mid-string
-  edits -- are not.
+Renamed from `not-in-v0.1.md` now that it spans more than one release.
+
+- True near-duplicate detection: paraphrases, reordered content, and
+  mid-string edits that change actual wording (not just whitespace) still
+  defeat detection. v0.2 added normalized-exact hashing, which catches
+  whitespace-only edits (a doubled space, a stray newline) that used to
+  slip past both the byte-exact and shared-prefix checks -- but a rephrased
+  sentence or a reordered paragraph still looks like unrelated text to both
+  detectors.
+- Separate hashing of tool schemas versus instruction blocks. A responder's
+  suggestion: today a repeated tool schema and a repeated instruction block
+  are both just "message content" to repeat.py, hashed and prefix-matched
+  the same way. Splitting them would let a reader tell "the tool
+  definitions are identical every step" from "the system prompt is
+  identical every step" instead of one merged finding.
 - Real tokenizer instead of len(text) // 4.
-- More providers.
+- More providers priced out of the box. prices.json (v0.2) makes adding a
+  model a JSON edit instead of a code change, but the shipped file still
+  only carries two entries.
 - Spans with token counts but no message content (e.g. CHAIN spans) are
   priced but invisible to repeat detection. Their tokens may be repeats we
   can't see.
 - Shared-prefix detection compares adjacent sorted strings, which is fast
   enough for small traces but untested on traces with hundreds of spans.
+  Normalized-exact hashing (v0.2) is a straightforward O(n) group-by and
+  doesn't share this concern.
 - Negative token counts are trusted into totals without warning. A span
   with a negative llm.token_count.prompt/completion silently pulls the
   report and cost totals down instead of being flagged as bad data.
