@@ -8,19 +8,39 @@ from parser import parse_log
 # Dollars per 1,000,000 tokens.
 PRICES = {
     "claude-opus-5-0": {"input": 5.0, "output": 25.0},
-    "claude-sonnet-4-6": {"input": 3.0, "output": 15.0},
+    # Source: https://openrouter.ai/anthropic/claude-sonnet-4.5, checked
+    # 2026-07-28. This is OpenRouter's per-token price, which bakes in their
+    # margin on top of Anthropic's list price -- not Anthropic's own rate.
+    "claude-sonnet-4.5": {"input": 3.0, "output": 15.0},
 }
 
 
+def _normalize_model(model):
+    """PRICES keys are bare model names; strip a provider prefix like
+    'anthropic/' or 'openai/' before the lookup so 'anthropic/claude-sonnet-4.5'
+    resolves the same as 'claude-sonnet-4.5'."""
+    if not model:
+        return model
+    return model.rsplit("/", 1)[-1]
+
+
 def _cost(step):
-    """Dollar cost for one step, or None if we have no price for its model
-    (including steps with no llm.model_name at all, e.g. some CHAIN spans)."""
+    """Dollar cost for one step as (cost, source), or (None, None) if we
+    have neither a reported cost nor a price for its model (including steps
+    with no llm.model_name at all, e.g. some CHAIN spans).
+
+    A span's own reported cost always wins over our price table -- it
+    reflects what was actually billed, including any provider-side
+    discounting our static PRICES can't know about."""
+    if step.reported_cost is not None:
+        return step.reported_cost, "reported"
     if not step.model:
-        return None
-    price = PRICES.get(step.model)
+        return None, None
+    price = PRICES.get(_normalize_model(step.model))
     if price is None:
-        return None
-    return (step.input_tokens * price["input"] + step.output_tokens * price["output"]) / 1_000_000
+        return None, None
+    cost = (step.input_tokens * price["input"] + step.output_tokens * price["output"]) / 1_000_000
+    return cost, "computed"
 
 
 def render(steps):
@@ -32,27 +52,28 @@ def render(steps):
     priced_steps = [s for s in steps if not s.zero_tokens]
     container_steps = [s for s in steps if s.zero_tokens]
 
-    # (agent, step, input_tokens, output_tokens, cost_or_None)
-    rows = [(s.agent, s.step, s.input_tokens, s.output_tokens, _cost(s)) for s in priced_steps]
+    # (agent, step, input_tokens, output_tokens, cost_or_None, source_or_None)
+    rows = [(s.agent, s.step, s.input_tokens, s.output_tokens, *_cost(s)) for s in priced_steps]
 
     # Priced rows first, highest cost first; unpriced ("n/a") rows sink to the
     # bottom in their original order rather than being dropped.
     rows.sort(key=lambda r: (r[4] is None, -(r[4] or 0.0)))
 
-    run_total = sum(cost for *_, cost in rows if cost is not None)
-    unpriced = sum(1 for *_, cost in rows if cost is None)
+    run_total = sum(r[4] for r in rows if r[4] is not None)
+    unpriced = sum(1 for r in rows if r[4] is None)
 
-    header = ("#", "AGENT", "STEP", "IN", "OUT", "COST", "% OF TOTAL")
+    header = ("#", "AGENT", "STEP", "IN", "OUT", "COST", "SOURCE", "% OF TOTAL")
     table = [header]
-    for rank, (agent, step_name, inp, out, cost) in enumerate(rows, start=1):
+    for rank, (agent, step_name, inp, out, cost, source) in enumerate(rows, start=1):
         if cost is None:
-            cost_s, pct_s = "n/a", "n/a"
+            cost_s, pct_s, source_s = "n/a", "n/a", "-"
         else:
             cost_s = f"${cost:.4f}"
             pct_s = f"{cost / run_total * 100:.1f}%" if run_total > 0 else "n/a"
-        table.append((str(rank), agent, step_name, f"{inp:,}", f"{out:,}", cost_s, pct_s))
+            source_s = source
+        table.append((str(rank), agent, step_name, f"{inp:,}", f"{out:,}", cost_s, source_s, pct_s))
 
-    right_aligned = {0, 3, 4, 5, 6}
+    right_aligned = {0, 3, 4, 5, 7}
     widths = [max(len(row[i]) for row in table) for i in range(len(header))]
     lines = [
         "  ".join(

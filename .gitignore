@@ -1,2 +1,3 @@
 __pycache__/
 .claude/
+openrouter_trace.jsonl

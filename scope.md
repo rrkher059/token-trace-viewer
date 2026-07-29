@@ -17,7 +17,9 @@ Command-line tool. Point it at a log file, get a table.
 - No optimization suggestions. It shows a context block was resent nine times. It does not tell you how to fix it.
 - No instrumentation. It does not wrap your LLM calls or collect traces. You bring a log; it reads it.
 - Prices for one provider only, hardcoded in v0.1.
-- OpenInference spans only. No framework-specific log formats.
+- OpenInference spans only, with one LangGraph-specific fallback (recovering
+  node names from the `metadata` attribute's `langgraph_node` key). No other
+  framework-specific log formats.
 
 ## Why this exists
 
@@ -35,9 +37,10 @@ Two gaps:
 | # | URL | What they said |
 |---|-----|----------------|
 | 1 | https://github.com/langchain-ai/langgraph/issues/8094 | Costs tripled; spent days chasing phantom regression |
-| 2 | https://github.com/langchain-ai/langgraph/issues/7562 | Stable prefix replayed every turn, priced it |
-| 3 | https://github.com/langchain-ai/langgraph/issues/7417 | Sub-agents silently re-run, 2-3x wasted cost |
-| 4 | https://github.com/crewAIInc/crewAI/issues/1915 | wants per-agent tokens, not crew totals |
+| 2 | https://github.com/langchain-ai/langgraph/issues/7417 | Sub-agents silently re-run, 2-3x wasted cost |
+
+Found 2: langchain-ai/langgraph issues #7562 and crewAIInc/crewAI issue
+#1915 were dropped from this table -- both closed.
 
 ---
 

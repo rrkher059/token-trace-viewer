@@ -39,7 +39,13 @@ def find_repeats(path):
     """
     occurrences = defaultdict(set)
 
-    with open(path, "r", encoding="utf-8", errors="replace") as handle:
+    try:
+        handle = open(path, "r", encoding="utf-8", errors="replace")
+    except OSError as exc:
+        print(f"error: cannot read '{path}': {exc.strerror}", file=sys.stderr)
+        sys.exit(1)
+
+    with handle:
         for line_number, line in enumerate(handle, start=1):
             line = line.strip()
             if not line:

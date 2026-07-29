@@ -17,6 +17,7 @@ class Step:
     output_tokens: int
     raw_line_number: int
     zero_tokens: bool
+    reported_cost: float | None
 
 
 def _as_int(value) -> int:
@@ -26,6 +27,34 @@ def _as_int(value) -> int:
         return int(value)
     except (TypeError, ValueError):
         return 0
+
+
+def _as_float(value) -> float | None:
+    """Cost values arrive as floats normally, sometimes as numeric strings,
+    sometimes garbage. Unlike _as_int, missing/unparseable becomes None, not
+    0 -- a $0 span and a span with no cost data are different things."""
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _reported_cost(attrs: dict) -> float | None:
+    """OpenInference spec: a span may report its dollar cost directly via
+    llm.cost.total, or split as llm.cost.prompt and llm.cost.completion.
+    Prefer the total when present; fall back to the sum of both halves only
+    if both are readable, so a half-populated pair doesn't silently read as
+    the cost of just one side."""
+    total = _as_float(attrs.get("llm.cost.total"))
+    if total is not None:
+        return total
+    prompt_cost = _as_float(attrs.get("llm.cost.prompt"))
+    completion_cost = _as_float(attrs.get("llm.cost.completion"))
+    if prompt_cost is not None and completion_cost is not None:
+        return prompt_cost + completion_cost
+    return None
 
 
 def _langgraph_node(attrs: dict) -> str | None:
@@ -67,6 +96,7 @@ def _to_step(record: dict, line_number: int) -> Step:
         output_tokens=output_tokens,
         raw_line_number=line_number,
         zero_tokens=input_tokens == 0 and output_tokens == 0,
+        reported_cost=_reported_cost(attrs),
     )
 
 
