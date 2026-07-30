@@ -41,3 +41,10 @@ Renamed from `not-in-v0.1.md` now that it spans more than one release.
 - Untested against real exporter output from Phoenix, Langfuse, CrewAI, or
   AutoGen. Only a hand-rolled LangGraph/OpenInference trace has been run
   through it.
+- Span id extraction (v0.2) is implemented but has never fired on an actual
+  finding: none of the three bundled fixtures has a span_id/context.span_id
+  on any span that's part of a repeated block, so every "found at" line
+  produced so far shows line numbers. The one fixture line that does carry
+  a span id (sample-broken.jsonl) has no message content, so it can't
+  appear in a repeat-detection row either. The extraction code has only
+  been checked against a hand-built test file, not a real trace.

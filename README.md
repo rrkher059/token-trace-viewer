@@ -6,7 +6,7 @@ When your agent run costs more than you expected, this tells you which sub-agent
 
 - Per-sub-agent totals — input and output tokens grouped by agent, then by step.
 - Cost ranking — every step in the run, sorted by dollar cost, highest first.
-- Repeated-context detection — flags context blocks sent more than once across steps, with repeat count, estimated wasted tokens, which detection mechanism found it, and the step names and span ids (or line numbers, if the trace has no span id) where it occurred.
+- Repeated-context detection — flags context blocks sent more than once across steps, with repeat count, estimated wasted tokens, which detection mechanism found it, and the step names and locations where it occurred. Locations are a span id when the trace carries one, otherwise a line number — in practice, none of the three bundled fixtures (`sample.jsonl`, `sample-broken.jsonl`, `real-trace.jsonl`) has a span id on any span that's part of a repeated block, so line numbers are what you'll actually see today.
 
 ## Install
 
